@@ -28,12 +28,12 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         
-    def train_loop(self, model, train_loader):
+    def train_loop(self, model, train_loader, val_loader):
         for epoch in range(EPOCHS):
             print("---------------- Epoch {} ----------------".format(epoch+1))
             self._training_step(model, train_loader, epoch)
             
-            self._validate(model, test_loader, epoch)
+            self._validate(model, val_loader, epoch)
         interface.Save_Info()
     
     def test(self, model, test_loader):
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     EPOCHS = 1
     BATCH_SIZE = 16
     PRINT_FREQ = 8
-    TRAIN_NUMS = 49000
+    TRAIN_NUMS = 900
 
     CUDA = True
 
@@ -257,17 +257,10 @@ if __name__ == '__main__':
 
     FILE_PATH = "./dataset_cat/"
 
+    MODEL_PATH = "./model/model.pth"
+
     IRE = IRE()
     interface = IRE_Interface()
-
-    model = VGG16()
-    model.cuda()
-    summary(model, (3, 224, 224))
-
-    # define loss, optimizer and scheduler
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(params=model.parameters(),lr=1e-3, momentum=0.9, weight_decay=1e-3) # weight_decay can be smaller
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
     # Get image list and label
     # Image name
@@ -306,10 +299,11 @@ if __name__ == '__main__':
     # make datasets and dataloaders
     train_dataset = Dataset(train_image_list, train_label_list, data_transform, train=True)
     test_dataset = Dataset(test_image_list, test_label_list, data_transform, train=False)
+    train_len = len(train_dataset)
 
-    train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(range(TRAIN_NUMS)))
+    val_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(range(TRAIN_NUMS, train_len)))
     test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-
 
     # CUDA
     # testing CUDA is available or not
@@ -319,7 +313,25 @@ if __name__ == '__main__':
         device = torch.device("cpu")
     print(device)
 
+    # VGG Model
+    model = VGG16()
+    model.cuda()
+    summary(model, (3, 224, 224))
+
+    # define loss, optimizer and scheduler
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(params=model.parameters(),lr=1e-3, momentum=0.9, weight_decay=1e-3) # weight_decay can be smaller
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
+
     # start training
     trainer = Trainer(criterion, optimizer, device)
-    trainer.train_loop(model, train_loader)
+    trainer.train_loop(model, train_loader, val_loader)
     trainer.test(model, test_loader)
+
+    # save model
+    torch.save(model.state_dict(), MODEL_PATH)
+
+    # load model
+    # new_model = VGG(model_type='VGG16')
+    # new_model.load_state_dict(torch.load(MODEL_PATH))
+    # new_model.eval()
