@@ -17,9 +17,9 @@ from PIL import Image
 
 import numpy as np
 import time
-import os
 
 from IRE import *
+import vgg as VGG
 
 # Training class
 class Trainer:
@@ -111,7 +111,7 @@ class Dataset(Dataset):
             self.image_path = TEST_PATH
         
         # Transforms
-        self.to_tensor = transforms.ToTensor()
+        # self.to_tensor = transforms.ToTensor()
         
         # image name        
         self.image_list = image_list
@@ -138,7 +138,7 @@ class Dataset(Dataset):
         
         # Transform image to tensor
         img_as_tensor = self.transform(img_as_img)
-        img_as_tensor = self.to_tensor(img_as_tensor)
+        # img_as_tensor = self.to_tensor(img_as_tensor)
         
         # Get label(class) of the image based on the cropped pandas column
         single_image_label = self.label_list[index]
@@ -151,7 +151,6 @@ class VGG16(nn.Module):
     def __init__(self, num_classes=12):
         super(VGG16, self).__init__()
         self.features = self._make_layers(cfg['VGG16'])
-        self.feature_map = []
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
@@ -240,23 +239,20 @@ if __name__ == '__main__':
         'Sphynx': 11
     }
 
-    CIFAR_MEAN = [0.49139968, 0.48215827, 0.44653124]
-    CIFAR_STD = [0.2023, 0.1994, 0.2010]
+    MEAN = [0.49139968, 0.48215827, 0.44653124]
+    STD = [0.2023, 0.1994, 0.2010]
 
-    EPOCHS = 1
+    EPOCHS = 20
     BATCH_SIZE = 16
-    PRINT_FREQ = 8
+    PRINT_FREQ = 16
     TRAIN_NUMS = 900
 
     CUDA = True
 
     PATH_TO_SAVE_DATA = "./"
 
-    TRAIN_PATH = "./dataset_cat/train/"
-    TEST_PATH = "./dataset_cat/test/"
-
-    FILE_PATH = "./dataset_cat/"
-
+    TRAIN_PATH = "./dataset/crop_image/train/"
+    TEST_PATH = "./dataset/crop_image/test/"
     MODEL_PATH = "./model/model.pth"
 
     IRE = IRE()
@@ -292,7 +288,9 @@ if __name__ == '__main__':
 
     # define datatransform
     data_transform = transforms.Compose([
-                      transforms.Resize(size=(224, 224))
+                      transforms.Resize(size=(224, 224)),
+                      transforms.ToTensor(),
+                      transforms.Normalize(MEAN, STD)
                       # data augmentaion
                     ])
 
@@ -314,24 +312,23 @@ if __name__ == '__main__':
     print(device)
 
     # VGG Model
+    # model = VGG.vgg('VGG16', pretrained=False)
     model = VGG16()
     model.cuda()
     summary(model, (3, 224, 224))
 
     # define loss, optimizer and scheduler
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(params=model.parameters(),lr=1e-3, momentum=0.9, weight_decay=1e-3) # weight_decay can be smaller
+    optimizer = torch.optim.SGD(params=model.parameters(), lr=1e-3, momentum=0.9, weight_decay=5e-4) # weight_decay can be smaller
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
     # start training
     trainer = Trainer(criterion, optimizer, device)
+    start_time = time.time()
     trainer.train_loop(model, train_loader, val_loader)
     trainer.test(model, test_loader)
+    end_time = time.time()
 
+    print("--- %s sec ---" % (end_time - start_time))
     # save model
     torch.save(model.state_dict(), MODEL_PATH)
-
-    # load model
-    # new_model = VGG(model_type='VGG16')
-    # new_model.load_state_dict(torch.load(MODEL_PATH))
-    # new_model.eval()
