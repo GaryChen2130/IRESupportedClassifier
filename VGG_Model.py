@@ -19,7 +19,6 @@ import numpy as np
 import time
 
 from IRE import *
-import vgg as VGG
 
 # Training class
 class Trainer:
@@ -147,10 +146,10 @@ class Dataset(Dataset):
 
 
 # VGG16 Model
-class VGG16(nn.Module):
-    def __init__(self, num_classes=12):
-        super(VGG16, self).__init__()
-        self.features = self._make_layers(cfg['VGG16'])
+class VGG(nn.Module):
+    def __init__(self, num_classes=12, model_type='VGG16'):
+        super(VGG, self).__init__()
+        self.features = self._make_layers(cfg[model_type])
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
@@ -191,19 +190,30 @@ class IRE_Interface:
     def __init__(self):
         self.labels = []
         self.classes = []
+        self.flag = False
 
     def RecordLabel(self,label_list):
         self.labels = label_list.cpu().clone().numpy().tolist().copy()
+        # print('record label:' + str(len(self.labels)))
+        self.flag = True
         return
 
     def RecordFeature(self,features):
+        if not self.flag:
+            return
+        # print('record feature:' + str(len(features)))
         for i in range(len(self.labels)):
             IRE.Training(features[i],self.labels[i])
         return
 
     def RecordClass(self,classes):
+        if not self.flag:
+            return
+        # print('record class:' + str(len(classes)))
+        classes = classes.cpu().detach().clone().numpy()
         for single_class in classes:
             self.classes.append(single_class)
+        self.flag = False
         return
 
     def Save_Info(self):
@@ -245,7 +255,7 @@ if __name__ == '__main__':
     EPOCHS = 20
     BATCH_SIZE = 16
     PRINT_FREQ = 16
-    TRAIN_NUMS = 900
+    TRAIN_NUMS = 1720   # for training and validation set
 
     CUDA = True
 
@@ -313,7 +323,7 @@ if __name__ == '__main__':
 
     # VGG Model
     # model = VGG.vgg('VGG16', pretrained=False)
-    model = VGG16()
+    model = VGG(num_classes=12, model_type='VGG16')
     model.cuda()
     summary(model, (3, 224, 224))
 

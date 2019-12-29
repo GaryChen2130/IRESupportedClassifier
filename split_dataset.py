@@ -13,19 +13,20 @@ dataset/
             |-- *.jpg
             |-- train.txt
             |-- label.txt
-    |-- flip_image/
-        ** same **
 """
 
 import shutil
 from os import listdir, makedirs
 from os.path import join, exists
 
-image_path = './dataset/flip_image/'
+image_path = './dataset/crop_image/'
 name_file_path = './dataset/train.txt'
 label_file_path = './dataset/label.txt'
 train_path = image_path + 'train/'
 test_path = image_path + 'test/'
+
+# for splitting training set and test set
+TRAINING_NUM = 1820
 
 if __name__ == '__main__':
 
@@ -54,8 +55,8 @@ if __name__ == '__main__':
     f.close()
 
     # split training and test set
-    train_set = image_list[:1000]
-    test_set = image_list[1000:]
+    train_set = image_list[:TRAINING_NUM]
+    test_set = image_list[TRAINING_NUM:]
 
     # copy images to certain directory
     for name in train_set:
@@ -73,8 +74,8 @@ if __name__ == '__main__':
         for name in test_set:
             f.write("%s\n" % name)
 
-    train_set = label_list[:1000]
-    test_set = label_list[1000:]
+    train_set = label_list[:TRAINING_NUM]
+    test_set = label_list[TRAINING_NUM:]
 
     # write label files
     with open(train_path + 'label.txt', 'w') as f:

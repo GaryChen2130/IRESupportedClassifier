@@ -39,7 +39,7 @@ class IRE:
 		target_vector = self.GetFeature(image_feature)
 
 		sim = []
-		for record_feature in feature_pool:
+		for record_feature in self.feature_pool:
 			sim.append(self.ComputeSim(target_feature,record_feature))
 
 		rank = []
@@ -47,9 +47,29 @@ class IRE:
 			rank.append((sim[i],self.labels[i]))
 
 		rank.sort(reverse = True)
-		print(rank)
 
-		return
+		return rank[0:k]
+
+
+	def RankFeature(self,target_feature,k):
+		sim = []
+		for record_feature in self.feature_pool:
+			sim.append(self.ComputeSim(target_feature,record_feature))
+
+		rank = []
+		for i in range(len(sim)):
+			rank.append((sim[i],self.labels[i]))
+
+		rank.sort(reverse = True)
+
+		return rank[0:k]
+
+
+	def Poll(self,rank):
+		result = [0]*12
+		for member in rank:
+			result[member[1]] += 1
+		return result
 
 
 	def Training(self,image_feature,image_label):
@@ -62,5 +82,14 @@ class IRE:
 		features = np.array(self.feature_pool)
 		labels = np.array(self.labels)
 		return features,labels
+
+
+	def Read_Info(self,path):
+		print('Read information')
+		self.feature_pool = np.load(path + '/features.npy').tolist()
+		self.labels = np.load(path + '/labels.npy').tolist()
+		print(len(self.feature_pool))
+		print(len(self.labels))
+		return
 		
 
