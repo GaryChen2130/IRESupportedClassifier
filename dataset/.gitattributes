@@ -1,4 +1,0 @@
-crop_image.zip filter=lfs diff=lfs merge=lfs -text
-flip_image.zip filter=lfs diff=lfs merge=lfs -text
-new_image.zip filter=lfs diff=lfs merge=lfs -text
-image.zip filter=lfs diff=lfs merge=lfs -text
