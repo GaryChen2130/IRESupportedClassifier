@@ -4,7 +4,11 @@ import numpy as np
 class IRE:
 	def __init__(self):
 		self.feature_pool = []
+		self.feature_pool_validate = []
+		self.feature_pool_test = []
 		self.labels = []
+		self.labels_validate = []
+		self.labels_test = []
 
 
 	def GetFeature(self,feature_map_list):
@@ -14,9 +18,16 @@ class IRE:
 		return feature_vector
 
 
-	def RecordFeature(self,feature_vector,label):
-		self.feature_pool.append(feature_vector)
-		self.labels.append(label)
+	def RecordFeature(self,feature_vector,label,state):
+		if state == 0:
+			self.feature_pool.append(feature_vector)
+			self.labels.append(label)
+		elif state == 1:
+			self.feature_pool_validate.append(feature_vector)
+			self.labels_validate.append(label)
+		elif state == 2:
+			self.feature_pool_test.append(feature_vector)
+			self.labels_test.append(label)
 		return
 
 
@@ -72,24 +83,41 @@ class IRE:
 		return result
 
 
-	def Training(self,image_feature,image_label):
+	def Training(self,image_feature,image_label,state):
 		feature_vector = self.GetFeature(image_feature)
-		self.RecordFeature(feature_vector,image_label)
+		self.RecordFeature(feature_vector,image_label,state)
 		return
 
 
 	def Get_Info(self):
 		features = np.array(self.feature_pool)
+		features_validate = np.array(self.feature_pool_validate)
+		features_test = np.array(self.feature_pool_test)
 		labels = np.array(self.labels)
-		return features,labels
+		labels_validate = np.array(self.labels_validate)
+		labels_test = np.array(self.labels_test)
+		return features,features_validate,features_test,labels,labels_validate,labels_test
 
 
 	def Read_Info(self,path):
 		print('Read information')
 		self.feature_pool = np.load(path + '/features.npy').tolist()
+		self.feature_pool_validate = np.load(path + '/features_validate.npy').tolist()
+		self.feature_pool_test = np.load(path + '/features_test.npy').tolist()
 		self.labels = np.load(path + '/labels.npy').tolist()
+		self.labels_validate = np.load(path + '/labels_validate.npy').tolist()
+		self.labels_test = np.load(path + '/labels_test.npy').tolist()
+
+		print('Training Set')
 		print(len(self.feature_pool))
 		print(len(self.labels))
+		print('Validating Set')
+		print(len(self.feature_pool_validate))
+		print(len(self.labels_validate))
+		print('Testing Set')
+		print(len(self.feature_pool_test))
+		print(len(self.labels_test))
+
 		return
 		
 

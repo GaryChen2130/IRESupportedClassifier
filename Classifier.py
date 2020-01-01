@@ -26,12 +26,12 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         
-    def train_loop(self, model, train_loader):
+    def train_loop(self, model, train_loader,val_loader):
         for epoch in range(EPOCHS):
             print("---------------- Epoch {} ----------------".format(epoch+1))
             self._training_step(model, train_loader, epoch)
             
-            #self._validate(model, val_loader, epoch)
+            self._validate(model, val_loader, epoch)
     
     def test(self, model, test_loader):
             print("---------------- Testing ----------------")
@@ -68,7 +68,7 @@ class Trainer:
                 N = X.shape[0]
                 
                 outs = model(X.float())
-                loss = self.criterion(outs, y)
+                loss = self.criterion(outs, y.long())
                 
                 y_list.append(y)
                 outs_list.append(outs)
@@ -130,9 +130,23 @@ if __name__ == '__main__':
     input_data = torch.from_numpy(input_data)
     input_label = np.load('./labels.npy')
 
+    validate_data = np.load('./combine_data_validate.npy')
+    validate_data = torch.from_numpy(validate_data)
+    validate_label = np.load('./labels_validate.npy')
+
+    test_data = np.load('./combine_data_test.npy')
+    test_data = torch.from_numpy(test_data)
+    test_label = np.load('./labels.npy')
+
     # make datasets and dataloaders
     train_dataset = Dataset(input_data, input_label, train=True)
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=False, sampler=SubsetRandomSampler(range(TRAIN_NUMS)))
+
+    validate_dataset = Dataset(validate_data, validate_label, train=True)
+    validate_loader = DataLoader(dataset=validate_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+    test_dataset = Dataset(test_data, test_label, train=True)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     num_classes = 12
     model = nn.Sequential(
@@ -156,8 +170,8 @@ if __name__ == '__main__':
     # start training
     trainer = Trainer(criterion, optimizer, device)
     start_time = time.time()
-    trainer.train_loop(model, train_loader)
-    #trainer.test(model, test_loader)
+    trainer.train_loop(model, train_loader,validate_loader)
+    trainer.test(model, test_loader)
     end_time = time.time()
 
     print("--- %s sec ---" % (end_time - start_time))

@@ -33,19 +33,22 @@ class Trainer:
             self._training_step(model, train_loader, epoch)
             
             self._validate(model, val_loader, epoch)
-        interface.Save_Info()
     
     def test(self, model, test_loader):
             print("---------------- Testing ----------------")
             self._validate(model, test_loader, 0, state="Testing")
+            interface.Save_Info()
             
     def _training_step(self, model, loader, epoch):
         model.train()
         
+        interface.state = 0
+        interface.epoch_cur = epoch
         for step, (X, y) in enumerate(loader):
             X, y = X.to(self.device), y.to(self.device)
             N = X.shape[0]
-            interface.RecordLabel(y)
+            if epoch == EPOCHS - 1:
+                interface.RecordLabel(y)
             
             self.optimizer.zero_grad()
             outs = model(X)
@@ -64,11 +67,18 @@ class Trainer:
         outs_list = []
         loss_list = []
         y_list = []
+
+        if state == 'Validate':
+            interface.state = 1
+        elif state == 'Testing':
+            interface.state = 2
         
         with torch.no_grad():
             for step, (X, y) in enumerate(loader):
                 X, y = X.to(self.device), y.to(self.device)
                 N = X.shape[0]
+                if (epoch == EPOCHS - 1) or (interface.state == 2):
+                    interface.RecordLabel(y)
                 
                 outs = model(X)
                 loss = self.criterion(outs, y)
@@ -190,6 +200,10 @@ class IRE_Interface:
     def __init__(self):
         self.labels = []
         self.classes = []
+        self.classes_validate = []
+        self.classes_test = []
+        self.epoch_cur = 0
+        self.state = 0  # 0:training 1:validate 2:testing
         self.flag = False
 
     def RecordLabel(self,label_list):
@@ -199,29 +213,49 @@ class IRE_Interface:
         return
 
     def RecordFeature(self,features):
-        if not self.flag:
+        if ((self.epoch_cur != EPOCHS - 1) and (self.state < 2)) or (not self.flag):
             return
-        # print('record feature:' + str(len(features)))
+        #print('record feature:')
+        #print(features)
+
         for i in range(len(self.labels)):
-            IRE.Training(features[i],self.labels[i])
+            IRE.Training(features[i],self.labels[i],self.state)
+
         return
 
     def RecordClass(self,classes):
-        if not self.flag:
+        if ((self.epoch_cur != EPOCHS - 1) and (self.state < 2)) or (not self.flag):
             return
-        # print('record class:' + str(len(classes)))
+        #print('record class:')
+        #print(classes)
         classes = classes.cpu().detach().clone().numpy()
+
         for single_class in classes:
-            self.classes.append(single_class)
+            if self.state == 0:
+                self.classes.append(single_class)
+            elif self.state == 1:
+                self.classes_validate.append(single_class)
+            elif self.state == 2:
+                self.classes_test.append(single_class)
+
         self.flag = False
         return
 
     def Save_Info(self):
         classes = np.array(self.classes)
-        features,labels = IRE.Get_Info()
+        classes_validate = np.array(self.classes_validate)
+        classes_test = np.array(self.classes_test)
+        features,features_validate,features_test,labels,labels_validate,labels_test = IRE.Get_Info()
+
         np.save(PATH_TO_SAVE_DATA + 'classes',classes)
+        np.save(PATH_TO_SAVE_DATA + 'classes_validate',classes_validate)
+        np.save(PATH_TO_SAVE_DATA + 'classes_test',classes_test)
         np.save(PATH_TO_SAVE_DATA + 'features',features)
+        np.save(PATH_TO_SAVE_DATA + 'features_validate',features_validate)
+        np.save(PATH_TO_SAVE_DATA + 'features_test',features_test)
         np.save(PATH_TO_SAVE_DATA + 'labels',labels)
+        np.save(PATH_TO_SAVE_DATA + 'labels_validate',labels_validate)
+        np.save(PATH_TO_SAVE_DATA + 'labels_test',labels_test)
 
 
 if __name__ == '__main__':
@@ -255,7 +289,8 @@ if __name__ == '__main__':
     EPOCHS = 20
     BATCH_SIZE = 16
     PRINT_FREQ = 16
-    TRAIN_NUMS = 1720   # for training and validation set
+    TRAIN_NUMS = 900   # for training and validation set
+    #TRAIN_NUMS = 1720   # for training and validation set
 
     CUDA = True
 
