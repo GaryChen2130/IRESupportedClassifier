@@ -24,6 +24,7 @@ def Compute_Sim(img0,img1):
 
 def Compare_Sim(img0,img1):
 	
+	'''
 	# Method1 SSIM
 	sub_img0 = cv2.split(img0)
 	sub_img1 = cv2.split(img1)
@@ -32,6 +33,7 @@ def Compare_Sim(img0,img1):
 		(score,diff) = compare_ssim(ch0, ch1, full=True)
 		Sum += score
 	score = Sum/3
+	'''
 
 	'''
 	# Method2: Histogram

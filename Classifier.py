@@ -121,10 +121,11 @@ if __name__ == '__main__':
 	    device = torch.device("cpu")
     print(device)
 
-    EPOCHS = 10000
+    EPOCHS = 200
     BATCH_SIZE = 16
     PRINT_FREQ = 16
-    TRAIN_NUMS = 900
+    #TRAIN_NUMS = 900
+    TRAIN_NUMS = 1720
 
     input_data = np.load('./combine_data.npy')
     input_data = torch.from_numpy(input_data)
@@ -136,7 +137,7 @@ if __name__ == '__main__':
 
     test_data = np.load('./combine_data_test.npy')
     test_data = torch.from_numpy(test_data)
-    test_label = np.load('./labels.npy')
+    test_label = np.load('./labels_test.npy')
 
     # make datasets and dataloaders
     train_dataset = Dataset(input_data, input_label, train=True)
@@ -157,7 +158,6 @@ if __name__ == '__main__':
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(256, num_classes),
-            nn.Softmax(dim = 0)
         )
     model.cuda()
     summary(model, (1, 1, 24))

@@ -15,6 +15,9 @@ class IRE:
 		feature_vector = []
 		for feature_map in feature_map_list:
 			feature_vector.append(self.MaxPooling(feature_map))
+		arr = np.array(feature_vector)
+		norm = np.linalg.norm(arr, 2)
+		feature_vector[:] = arr[:] / norm
 		return feature_vector
 
 
@@ -78,8 +81,11 @@ class IRE:
 
 	def Poll(self,rank):
 		result = [0]*12
+		k = len(rank)
 		for member in rank:
 			result[member[1]] += 1
+		for i in range(12):
+			result[i] = result[i]/k
 		return result
 
 

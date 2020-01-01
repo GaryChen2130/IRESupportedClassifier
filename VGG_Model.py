@@ -289,8 +289,8 @@ if __name__ == '__main__':
     EPOCHS = 20
     BATCH_SIZE = 16
     PRINT_FREQ = 16
-    TRAIN_NUMS = 900   # for training and validation set
-    #TRAIN_NUMS = 1720   # for training and validation set
+    #TRAIN_NUMS = 900   # for training and validation set
+    TRAIN_NUMS = 1720   # for training and validation set
 
     CUDA = True
 
