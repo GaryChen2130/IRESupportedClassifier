@@ -20,20 +20,30 @@ if __name__ == '__main__':
 
 	start_time = time.time()
 
+	k = 5
+
 	for i in range(len(classes)):
-		rank = IRE.RankFeature(IRE.feature_pool[i],5)
+		rank = IRE.RankFeature(IRE.feature_pool[i],k)
 		IRE_result = IRE.Poll(rank)
 		combine_data.append(classes[i] + IRE_result)
 
 	for i in range(len(classes_validate)):
-		rank = IRE.RankFeature(IRE.feature_pool_validate[i],5)
+		rank = IRE.RankFeature(IRE.feature_pool_validate[i],k)
 		IRE_result = IRE.Poll(rank)
 		combine_data_validate.append(classes_validate[i] + IRE_result)
 
+	acc = 0
+	print('----------------Testing----------------')
 	for i in range(len(classes_test)):
-		rank = IRE.RankFeature(IRE.feature_pool_test[i],5)
+		rank = IRE.RankFeature(IRE.feature_pool_test[i],k)
 		IRE_result = IRE.Poll(rank)
 		combine_data_test.append(classes_test[i] + IRE_result)
+		if IRE_result.index(max(IRE_result)) == IRE.labels_test[i]:
+			acc += 1
+		print('accuracy:' + str(acc/(i + 1)))
+		print(IRE_result)
+		print(IRE.labels_test[i])
+		print()
 
 	np.save('./combine_data',np.array(combine_data))
 	np.save('./combine_data_validate',np.array(combine_data_validate))

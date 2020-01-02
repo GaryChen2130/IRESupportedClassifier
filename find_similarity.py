@@ -80,7 +80,7 @@ if __name__ == '__main__':
 		images.append(cv2.imread(INPUT_PATH + afile))
 
 	acc = 0
-	k = 5
+	k = 1
 	for i in range(len(images)):
 		rank_list = []
 		for j in range(len(images)):

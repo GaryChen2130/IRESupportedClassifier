@@ -121,11 +121,11 @@ if __name__ == '__main__':
 	    device = torch.device("cpu")
     print(device)
 
-    EPOCHS = 200
+    EPOCHS = 120
     BATCH_SIZE = 16
     PRINT_FREQ = 16
     #TRAIN_NUMS = 900
-    TRAIN_NUMS = 1720
+    TRAIN_NUMS = 1638
 
     input_data = np.load('./combine_data.npy')
     input_data = torch.from_numpy(input_data)
